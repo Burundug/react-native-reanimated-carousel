@@ -72,6 +72,10 @@ export type TCarouselProps<T = any> = {
       */
   loop?: boolean
   /**
+   * minSlideRange.
+   */
+  min: number
+  /**
       * Carousel items data set.
       */
   data: T[]

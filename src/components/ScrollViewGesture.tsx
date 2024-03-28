@@ -24,6 +24,8 @@ interface Props {
   size: number
   infinite?: boolean
   testID?: string
+  min?: number
+  defaultMinOffset?: number
   style?: StyleProp<ViewStyle>
   onScrollStart?: () => void
   onScrollEnd?: () => void
@@ -55,6 +57,8 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
     size,
     translation,
     testID,
+    defaultMinOffset,
+    min,
     style = {},
     onScrollStart,
     onScrollEnd,
@@ -146,7 +150,11 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
             finalTranslation = withSpring(withProcessTranslation(-finalPage * size), onFinished);
           }
           else {
-            const finalPage = Math.min(maxPage - 1, Math.max(0, page + offset));
+            let finalPage = Math.min(maxPage - 1, Math.max(0, page + offset));
+            if (min) {
+              if (finalPage < min)
+                finalPage = min;
+            }
             finalTranslation = withSpring(withProcessTranslation(-finalPage * size), onFinished);
           }
         }
@@ -318,6 +326,16 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
     }
 
     const translationValue = panOffset.value + panTranslation;
+    if (min && defaultMinOffset) {
+      if (translationValue < defaultMinOffset)
+        translation.value = translationValue;
+      else
+        translation.value = defaultMinOffset;
+    }
+    else {
+      translation.value = translationValue;
+    }
+
     translation.value = translationValue;
   }, [
     isHorizontal,

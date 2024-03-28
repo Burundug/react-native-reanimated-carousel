@@ -10,6 +10,8 @@ import { handlerOffsetDirection } from "../utils/handleroffset-direction";
 interface ICommonVariables {
   size: number
   validLength: number
+  defaultMinOffset: number
+  defaultHandlerOffsetValue: number
   handlerOffset: Animated.SharedValue<number>
 }
 
@@ -22,11 +24,13 @@ export function useCommonVariables(
     width,
     dataLength,
     defaultIndex,
+    min,
     defaultScrollOffsetValue,
     loop,
   } = props;
   const size = vertical ? height : width;
   const defaultHandlerOffsetValue = -Math.abs(defaultIndex * size);
+  const defaultMinOffset = -Math.abs((min || 0) * size);
   const _handlerOffset = useSharedValue<number>(defaultHandlerOffsetValue);
   const handlerOffset = defaultScrollOffsetValue ?? _handlerOffset;
   const prevDataLength = useSharedValue(dataLength);
@@ -94,5 +98,7 @@ export function useCommonVariables(
     size,
     validLength: dataLength - 1,
     handlerOffset,
+    defaultHandlerOffsetValue,
+    defaultMinOffset,
   };
 }

@@ -32,6 +32,7 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
       // Length of raw data
       rawDataLength,
       mode,
+      min,
       style,
       width,
       height,
@@ -53,7 +54,7 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
     } = props;
 
     const commonVariables = useCommonVariables(props);
-    const { size, handlerOffset } = commonVariables;
+    const { size, handlerOffset, defaultMinOffset } = commonVariables;
 
     const offsetX = useDerivedValue(() => {
       const totalSize = size * dataLength;
@@ -160,6 +161,8 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
           <ScrollViewGesture
             key={mode}
             size={size}
+            min={min}
+            defaultMinOffset={defaultMinOffset}
             translation={handlerOffset}
             style={[
               styles.container,
