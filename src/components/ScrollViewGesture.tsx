@@ -335,8 +335,6 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
     else {
       translation.value = translationValue;
     }
-
-    translation.value = translationValue;
   }, [
     isHorizontal,
     max,
