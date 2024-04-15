@@ -29,10 +29,14 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
       data,
       // Length of fill data
       dataLength,
+      useLoopOffset,
       // Length of raw data
       rawDataLength,
       mode,
       min,
+      useMin,
+      useMax,
+      max,
       style,
       width,
       height,
@@ -54,8 +58,7 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
     } = props;
 
     const commonVariables = useCommonVariables(props);
-    const { size, handlerOffset, defaultMinOffset } = commonVariables;
-
+    const { size, handlerOffset, defaultMinOffset, defaultMaxOffset } = commonVariables;
     const offsetX = useDerivedValue(() => {
       const totalSize = size * dataLength;
       const x = handlerOffset.value % totalSize;
@@ -102,7 +105,6 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
 
     const _onScrollEnd = React.useCallback(() => {
       const _sharedIndex = Math.round(getSharedIndex());
-
       const realIndex = computedRealIndexWithAutoFillData({
         index: _sharedIndex,
         dataLength: rawDataLength,
@@ -160,8 +162,13 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
         <CTX.Provider value={{ props, common: commonVariables }}>
           <ScrollViewGesture
             key={mode}
+            useMin={useMin}
+            useMax={useMax}
             size={size}
+            useLoopOffset={useLoopOffset}
             min={min}
+            maxOffset={max}
+            defaultMaxOffset={defaultMaxOffset}
             defaultMinOffset={defaultMinOffset}
             translation={handlerOffset}
             style={[
