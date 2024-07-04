@@ -36,7 +36,6 @@ export function useOnProgressChange(
           Math.min(value, 0),
         );
       }
-
       let absoluteProgress = Math.abs(value / size);
 
       if (value > 0)

@@ -11,6 +11,8 @@ interface ICommonVariables {
   size: number
   validLength: number
   defaultMinOffset: number
+  defaultForwardOffset: number
+  defaultMaxOffset: number
   defaultHandlerOffsetValue: number
   handlerOffset: Animated.SharedValue<number>
 }
@@ -24,21 +26,25 @@ export function useCommonVariables(
     width,
     dataLength,
     defaultIndex,
+    forwardMax,
     min,
+    max,
     defaultScrollOffsetValue,
     loop,
   } = props;
   const size = vertical ? height : width;
   const defaultHandlerOffsetValue = -Math.abs(defaultIndex * size);
   const defaultMinOffset = -Math.abs((min || 0) * size);
+  const defaultMaxOffset = -Math.abs((max || 0) * size);
+  const defaultForwardOffset = -Math.abs((forwardMax ? forwardMax + 144 : 0 || 0) * size);
   const _handlerOffset = useSharedValue<number>(defaultHandlerOffsetValue);
   const handlerOffset = defaultScrollOffsetValue ?? _handlerOffset;
   const prevDataLength = useSharedValue(dataLength);
   const prevSize = useSharedValue(size);
 
   /**
-   * When data changes, we need to compute new index for handlerOffset
-  */
+     * When data changes, we need to compute new index for handlerOffset
+     */
   useAnimatedReaction(() => {
     const previousLength = prevDataLength.value;
     const currentLength = dataLength;
@@ -69,8 +75,8 @@ export function useCommonVariables(
   }, [dataLength, loop]);
 
   /**
-   * When size changes, we need to compute new index for handlerOffset
-  */
+     * When size changes, we need to compute new index for handlerOffset
+     */
   useAnimatedReaction(() => {
     const previousSize = prevSize.value;
     const isSizeChanged = previousSize !== size;
@@ -98,7 +104,9 @@ export function useCommonVariables(
     size,
     validLength: dataLength - 1,
     handlerOffset,
+    defaultForwardOffset,
     defaultHandlerOffsetValue,
     defaultMinOffset,
+    defaultMaxOffset,
   };
 }

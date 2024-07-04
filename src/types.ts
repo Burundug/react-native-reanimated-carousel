@@ -70,11 +70,33 @@ export type TCarouselProps<T = any> = {
       * Carousel loop playback.
       * @default true
       */
+
   loop?: boolean
+  /**
+   * if Loop - used for enable or disable min.
+   */
+  useMin?: boolean
+  /**
+   * if Loop - used for enable or disable max.
+   */
+  useMax?: boolean
+  /**
+   * if LoopOffset - used for enable or disable max.
+   */
+  useLoopOffset?: boolean
+  /**
+   * use next MaxValue.
+   */
+  forwardMax: number
   /**
    * minSlideRange.
    */
   min: number
+
+  /**
+   * maxSlideRange.
+   */
+  max: number
   /**
       * Carousel items data set.
       */

@@ -25,6 +25,11 @@ interface Props {
   infinite?: boolean
   testID?: string
   min?: number
+  useLoopOffset?: boolean
+  useMin?: boolean
+  useMax?: boolean
+  maxOffset?: number
+  defaultMaxOffset?: number
   defaultMinOffset?: number
   style?: StyleProp<ViewStyle>
   onScrollStart?: () => void
@@ -57,8 +62,12 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
     size,
     translation,
     testID,
+    maxOffset,
+    defaultMaxOffset,
     defaultMinOffset,
     min,
+    useMin,
+    useMax,
     style = {},
     onScrollStart,
     onScrollEnd,
@@ -133,12 +142,12 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
       }
       else {
         /**
-         * The page size is the same as the item size.
-         * If direction is vertical, the page size is the height of the item.
-         * If direction is horizontal, the page size is the width of the item.
-        *
-        * `page size` equals to `size` variable.
-        * */
+                 * The page size is the same as the item size.
+                 * If direction is vertical, the page size is the height of the item.
+                 * If direction is horizontal, the page size is the width of the item.
+                 *
+                 * `page size` equals to `size` variable.
+                 * */
         if (pagingEnabled) {
           // distance with direction
           const offset = -(scrollEndTranslation.value >= 0 ? 1 : -1); // 1 or -1
@@ -146,13 +155,27 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
           const page = computed(-translation.value / size);
 
           if (loop) {
-            const finalPage = page + offset;
+            let finalPage = page + offset;
+            if (useMax && maxOffset) {
+              const total = maxOffset;
+              if (finalPage > total)
+                finalPage = maxOffset;
+            }
+            if (useMin && min) {
+              const total = min;
+              if (finalPage < total)
+                finalPage = min;
+            }
             finalTranslation = withSpring(withProcessTranslation(-finalPage * size), onFinished);
           }
           else {
             let finalPage = Math.min(maxPage - 1, Math.max(0, page + offset));
-            if (min) {
-              if (finalPage < min)
+            if (useMax && maxOffset) {
+              if (finalPage > maxOffset)
+                finalPage = maxOffset;
+            }
+            if (useMin && min) {
+              if (finalPage <= min)
                 finalPage = min;
             }
             finalTranslation = withSpring(withProcessTranslation(-finalPage * size), onFinished);
@@ -182,6 +205,8 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
       withSpring,
       size,
       maxPage,
+      min,
+      maxOffset,
       loop,
       snapEnabled,
       translation,
@@ -304,7 +329,6 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
     }
     touching.value = true;
     const { translationX, translationY } = e;
-
     let panTranslation = isHorizontal.value
       ? translationX
       : translationY;
@@ -326,7 +350,38 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
     }
 
     const translationValue = panOffset.value + panTranslation;
-    if (min && defaultMinOffset) {
+    if (maxOffset && defaultMaxOffset && useMax) {
+      let count = (translationValue / size);
+      let realIndex = Math.abs(count);
+      count = Math.round(count / 144);
+      count = Math.abs(count) - 1;
+      count = count * 1 >= 1 ? 144 * count : 0;
+      if (realIndex > 144)
+        realIndex = realIndex - count;
+
+      realIndex = Math.abs(Math.round(realIndex));
+      if (translationValue > defaultMaxOffset) {
+        translation.value = translationValue;
+      }
+      else {
+        translation.value = defaultMaxOffset;
+        return;
+      }
+    }
+
+    if (min && defaultMinOffset && useMin) {
+      let count = (translationValue / size);
+      let realIndex = Math.abs(count);
+      // console.log(`count - ${count  + 144}`)
+      count = Math.round(count / 144);
+      count = Math.abs(count) - 1;
+      count = count * 1 >= 1 ? 144 * count : 0;
+      if (realIndex > 144)
+        realIndex = realIndex - count;
+
+      // цикл для do для минимального кол-ва
+      realIndex = Math.abs(Math.round(realIndex));
+      // let final = useLoopOffset ? defaultOffset : defaultMinOffset
       if (translationValue < defaultMinOffset)
         translation.value = translationValue;
       else
@@ -338,7 +393,9 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
   }, [
     isHorizontal,
     max,
+    min,
     panOffset,
+    maxOffset,
     loop,
     overscrollEnabled,
     fixedDirection,
@@ -370,9 +427,9 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
     const totalTranslation = scrollEndVelocity.value + scrollEndTranslation.value;
 
     /**
-     * If the maximum scroll distance is set and the translation `exceeds the maximum scroll distance`,
-     * the carousel will keep the view at the current position.
-    */
+         * If the maximum scroll distance is set and the translation `exceeds the maximum scroll distance`,
+         * the carousel will keep the view at the current position.
+         */
     if (
       maxScrollDistancePerSwipeIsSet && Math.abs(totalTranslation) > maxScrollDistancePerSwipe
     ) {
@@ -380,9 +437,9 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
       translation.value = withSpring(withProcessTranslation(nextPage), onScrollEnd);
     }
     /**
-     * If the minimum scroll distance is set and the translation `didn't exceeds the minimum scroll distance`,
-     * the carousel will keep the view at the current position.
-    */
+         * If the minimum scroll distance is set and the translation `didn't exceeds the minimum scroll distance`,
+         * the carousel will keep the view at the current position.
+         */
     else if (
       minScrollDistancePerSwipeIsSet && Math.abs(totalTranslation) < minScrollDistancePerSwipe
     ) {
