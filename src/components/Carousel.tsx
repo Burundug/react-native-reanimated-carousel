@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useMemo } from "react";
+import type { StyleProp, ViewStyle } from "react-native";
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { runOnJS, useDerivedValue } from "react-native-reanimated";
@@ -38,6 +39,7 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
       useMax,
       max,
       style,
+      containerStyle,
       width,
       height,
       vertical,
@@ -63,14 +65,13 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
       const totalSize = size * dataLength;
       const x = handlerOffset.value % totalSize;
 
-      if (!loop)
-        return handlerOffset.value;
+      if (!loop) return handlerOffset.value;
 
       return isNaN(x) ? 0 : x;
     }, [loop, size, dataLength]);
 
     usePropsErrorBoundary({ ...props, dataLength });
-    useOnProgressChange({
+    const progressValue = useOnProgressChange({
       autoFillData,
       loop,
       size,
@@ -93,8 +94,8 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
       onScrollStart: () => !!onScrollStart && runOnJS(onScrollStart)(),
     });
 
-    const { next, prev, scrollTo, getSharedIndex, getCurrentIndex }
-            = carouselController;
+    const { next, prev, scrollTo, getSharedIndex, getCurrentIndex } =
+      carouselController;
 
     const { start: startAutoPlay, pause: pauseAutoPlay } = useAutoPlay({
       autoPlay,
@@ -112,11 +113,9 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
         autoFillData,
       });
 
-      if (onSnapToItem)
-        onSnapToItem(realIndex);
+      if (onSnapToItem) onSnapToItem(realIndex);
 
-      if (onScrollEnd)
-        onScrollEnd(realIndex);
+      if (onScrollEnd) onScrollEnd(realIndex);
     }, [
       loop,
       autoFillData,
@@ -151,14 +150,22 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
         prev,
         getCurrentIndex,
         scrollTo,
+        progressValue,
       }),
       [getCurrentIndex, next, prev, scrollTo],
     );
 
     const layoutConfig = useLayoutConfig({ ...props, size });
 
+    const layoutStyle: StyleProp<ViewStyle> = useMemo(() => {
+      return {
+        width: width || "100%",
+        height: height || "100%",
+      };
+    }, [width, height, size]);
+
     return (
-      <GestureHandlerRootView>
+      <GestureHandlerRootView style={[styles.layoutContainer, containerStyle]}>
         <CTX.Provider value={{ props, common: commonVariables }}>
           <ScrollViewGesture
             key={mode}
@@ -172,15 +179,10 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
             defaultMinOffset={defaultMinOffset}
             translation={handlerOffset}
             style={[
-              styles.container,
-              {
-                width: width || "100%",
-                height: height || "100%",
-              },
+              styles.contentContainer,
+              layoutStyle,
               style,
-              vertical
-                ? styles.itemsVertical
-                : styles.itemsHorizontal,
+              vertical ? styles.itemsVertical : styles.itemsHorizontal,
             ]}
             testID={testID}
             onScrollStart={scrollViewGestureOnScrollStart}
@@ -210,11 +212,14 @@ const Carousel = React.forwardRef<ICarouselInstance, TCarouselProps<any>>(
 );
 
 export default Carousel as <T extends any>(
-  props: React.PropsWithChildren<TCarouselProps<T>>
-) => React.ReactElement;
+  props: React.PropsWithChildren<TCarouselProps<T>>,
+) => JSX.Element;
 
 const styles = StyleSheet.create({
-  container: {
+  layoutContainer: {
+    display: "flex",
+  },
+  contentContainer: {
     overflow: "hidden",
   },
   itemsHorizontal: {

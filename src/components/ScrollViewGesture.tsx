@@ -78,7 +78,7 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
   const maxPage = dataLength;
   const isHorizontal = useDerivedValue(() => !vertical, [vertical]);
   const max = useSharedValue(0);
-  const panOffset = useSharedValue(0);
+  const panOffset = useSharedValue<number | undefined>(undefined); // set to undefined when not actively in a pan gesture
   const touching = useSharedValue(false);
   const validStart = useSharedValue(false);
   const scrollEndTranslation = useSharedValue(0);
@@ -92,7 +92,8 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
     "worklet";
 
     if (!loop && !overscrollEnabled) {
-      const { width: containerWidth = 0 } = measure(containerRef);
+      const measurement = measure(containerRef);
+      const containerWidth = measurement?.width || 0;
 
       // If the item's total width is less than the container's width, then there is no need to scroll.
       if (dataLength * size < containerWidth)
@@ -129,15 +130,18 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
   );
 
   const endWithSpring = React.useCallback(
-    (onFinished?: () => void) => {
+    (scrollEndTranslationValue: number,
+      scrollEndVelocityValue: number,
+      onFinished?: () => void,
+    ) => {
       "worklet";
       const origin = translation.value;
-      const velocity = scrollEndVelocity.value;
+      const velocity = scrollEndVelocityValue;
       // Default to scroll in the direction of the slide (with deceleration)
       let finalTranslation: number = withDecay({ velocity, deceleration: 0.999 });
 
       // If the distance of the swipe exceeds the max scroll distance, keep the view at the current position
-      if (maxScrollDistancePerSwipeIsSet && Math.abs(scrollEndTranslation.value) > maxScrollDistancePerSwipe) {
+      if (maxScrollDistancePerSwipeIsSet && Math.abs(scrollEndTranslationValue) > maxScrollDistancePerSwipe) {
         finalTranslation = origin;
       }
       else {
@@ -150,9 +154,9 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
                  * */
         if (pagingEnabled) {
           // distance with direction
-          const offset = -(scrollEndTranslation.value >= 0 ? 1 : -1); // 1 or -1
+          const offset = -(scrollEndTranslationValue >= 0 ? 1 : -1); // 1 or -1
           const computed = offset < 0 ? Math.ceil : Math.floor;
-          const page = computed(-translation.value / size);
+          const page = computed(-origin / size);
 
           if (loop) {
             let finalPage = page + offset;
@@ -211,9 +215,7 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
       snapEnabled,
       translation,
       pagingEnabled,
-      scrollEndVelocity.value,
       maxScrollDistancePerSwipe,
-      scrollEndTranslation.value,
       maxScrollDistancePerSwipeIsSet,
     ],
   );
@@ -323,6 +325,20 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
   const onGestureUpdate = useCallback((e: PanGestureHandlerEventPayload) => {
     "worklet";
 
+    if (panOffset.value === undefined) {
+      // This may happen if `onGestureStart` is called as a part of the
+      // JS thread (instead of the UI thread / worklet). If so, when
+      // `onGestureStart` sets panOffset.value, the set will be asynchronous,
+      // and so it may not actually occur before `onGestureUpdate` is called.
+      //
+      // Keeping this value as `undefined` when it is not active protects us
+      // from the situation where we may use the previous value for panOffset
+      // instead; this would cause a visual flicker in the carousel.
+
+      // console.warn("onGestureUpdate: panOffset is undefined");
+      return;
+    }
+
     if (validStart.value) {
       validStart.value = false;
       cancelAnimation(translation);
@@ -407,10 +423,16 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
   const onGestureEnd = useCallback((e: GestureStateChangeEvent<PanGestureHandlerEventPayload>, _success: boolean) => {
     "worklet";
 
+    if (panOffset.value === undefined) {
+      // console.warn("onGestureEnd: panOffset is undefined");
+      return;
+    }
+
     const { velocityX, velocityY, translationX, translationY } = e;
-    scrollEndVelocity.value = isHorizontal.value
+    const scrollEndVelocityValue = isHorizontal.value
       ? velocityX
       : velocityY;
+    scrollEndVelocity.value = scrollEndVelocityValue; // may update async: see https://docs.swmansion.com/react-native-reanimated/docs/core/useSharedValue#remarks
 
     let panTranslation = isHorizontal.value
       ? translationX
@@ -422,9 +444,9 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
     else if (fixedDirection === "positive")
       panTranslation = +Math.abs(panTranslation);
 
-    scrollEndTranslation.value = panTranslation;
+    scrollEndTranslation.value = panTranslation; // may update async: see https://docs.swmansion.com/react-native-reanimated/docs/core/useSharedValue#remarks
 
-    const totalTranslation = scrollEndVelocity.value + scrollEndTranslation.value;
+    const totalTranslation = scrollEndVelocityValue + panTranslation;
 
     /**
          * If the maximum scroll distance is set and the translation `exceeds the maximum scroll distance`,
@@ -447,11 +469,13 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
       translation.value = withSpring(withProcessTranslation(nextPage), onScrollEnd);
     }
     else {
-      endWithSpring(onScrollEnd);
+      endWithSpring(panTranslation, scrollEndVelocityValue, onScrollEnd);
     }
 
     if (!loop)
       touching.value = false;
+
+    panOffset.value = undefined;
   }, [
     size,
     loop,

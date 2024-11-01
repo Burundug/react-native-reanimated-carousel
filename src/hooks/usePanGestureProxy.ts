@@ -54,6 +54,12 @@ export const usePanGestureProxy = (
       userDefinedConflictGestures.onBegin = cb;
       return gesture;
     };
+
+    const fakeOnBegin: typeof gesture.onBegin = (cb) => {
+      // Using fakeOnBegin to save the user defined callback
+      userDefinedConflictGestures.onBegin = cb;
+      return gesture;
+    };
     const fakeOnStart: typeof gesture.onStart = (cb) => {
       // Using fakeOnStart to save the user defined callback
       userDefinedConflictGestures.onStart = cb;
@@ -130,7 +136,8 @@ export const usePanGestureProxy = (
 
         if (userDefinedConflictGestures.onFinalize)
           userDefinedConflictGestures.onFinalize(e, success);
-      });
+      })
+    ;
 
     return gesture;
   }, [
