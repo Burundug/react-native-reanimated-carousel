@@ -242,7 +242,7 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
         return;
       }
       if (!loop) {
-        translation.value = withSpring(0);
+        translation.value = withSpring(0, onScrollEnd);
         return;
       }
     }
@@ -252,9 +252,19 @@ const IScrollViewGesture: React.FC<PropsWithChildren<Props>> = (props) => {
         activeDecay();
         return;
       }
-      if (!loop) translation.value = withSpring(-((maxPage - 1) * size));
+      if (!loop) translation.value = withSpring(-((maxPage - 1) * size), onScrollEnd);
     }
-  }, [touching, translation, maxPage, size, scrollEndTranslation, loop, activeDecay, withSpring]);
+  }, [
+    touching,
+    translation,
+    maxPage,
+    size,
+    scrollEndTranslation,
+    loop,
+    activeDecay,
+    withSpring,
+    onScrollEnd,
+  ]);
 
   useAnimatedReaction(
     () => translation.value,
