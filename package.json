@@ -39,7 +39,7 @@
 		"format": "biome format .",
 		"format:fix": "biome format --write .",
 		"dev": "watch 'yarn prepare' ./src",
-		"prepare": "bob build",
+		"prepack": "yarn clean && yarn build",
 		"clean": "del-cli lib",
 		"version": "changeset version",
 		"precommit": "yarn lint:fix && yarn format:fix"
