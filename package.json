@@ -96,7 +96,7 @@
 		"react-native-worklets": "0.5.1",
 		"react-test-renderer": "19.1.0",
 		"sponsorkit": "^0.1.3",
-		"typescript": "^5.5.4",
+		"typescript": "^5.9.3",
 		"watch": "^1.0.2"
 	},
 	"husky": {
@@ -122,11 +122,25 @@
 		"source": "src",
 		"output": "lib",
 		"targets": [
-			["commonjs", { "babelrc": false, "configFile": "./babel.config.js" }],
-			["module",   { "babelrc": false, "configFile": "./babel.config.js" }],
+			[
+				"commonjs",
+				{
+					"babelrc": false,
+					"configFile": "./babel.config.js"
+				}
+			],
+			[
+				"module",
+				{
+					"babelrc": false,
+					"configFile": "./babel.config.js"
+				}
+			],
 			"typescript"
 		],
-		"typescript": { "tsconfig": "tsconfig.build.json" },
+		"typescript": {
+			"tsconfig": "tsconfig.build.json"
+		},
 		"exclude": "**/*.test.{ts,tsx}"
 	},
 	"config": {
