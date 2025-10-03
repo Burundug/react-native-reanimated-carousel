@@ -76,3 +76,9 @@ lib/
 
 # Jest
 coverage/
+
+# Issue tasks
+.issue-tasks/
+
+# Agents Docs
+*.local.md
