@@ -122,22 +122,11 @@
 		"source": "src",
 		"output": "lib",
 		"targets": [
-			[
-				"commonjs",
-				{
-					"babelrc": false,
-					"configFile": "./babel.config.js"
-				}
-			],
-			[
-				"module",
-				{
-					"babelrc": false,
-					"configFile": "./babel.config.js"
-				}
-			],
+			["commonjs", { "babelrc": false, "configFile": "./babel.config.js" }],
+			["module",   { "babelrc": false, "configFile": "./babel.config.js" }],
 			"typescript"
 		],
+		"typescript": { "tsconfig": "tsconfig.build.json" },
 		"exclude": "**/*.test.{ts,tsx}"
 	},
 	"config": {
